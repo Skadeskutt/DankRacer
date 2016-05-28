@@ -4,8 +4,10 @@ using System.Collections.Generic;
 
 [ExecuteInEditMode]
 public class EnemyAI : MonoBehaviour {
-    public float speed = 80f;
+    public float speed = 0f;
+    public float speedTarget = 80f;
     public GameObject detectors;
+    public PathNode nextNode;
     public List<RayCastAI> rayCast = new List<RayCastAI>();
 
     private float verticalSens = 3f;
@@ -21,9 +23,17 @@ public class EnemyAI : MonoBehaviour {
 
         if(Application.isPlaying) {
 
+            speed = updatedSpeed(speed);
+
+            if(Vector3.Distance(transform.position, nextNode.transform.position) <= 10f) {
+                nextNode = nextNode.getNextNode();
+                speed -= 10f;
+            }
 
             float step = (speed) * Time.deltaTime;
-            transform.Translate(Vector3.forward * step);
+            transform.position = Vector3.MoveTowards(transform.position, nextNode.transform.position, step);
+
+            transform.LookAt(nextNode.transform);
 
 
             foreach(RayCastAI ai in rayCast) {
@@ -34,6 +44,13 @@ public class EnemyAI : MonoBehaviour {
                 }
             }
         }
+    }
+
+    private float updatedSpeed(float last) {
+        float newSpeed = last += (last / 100f);
+        if(newSpeed == 0f)
+            newSpeed = 1f;
+        return Mathf.Clamp(newSpeed, 0f, speedTarget);
     }
 
     private void listDetectors() {
