@@ -63,51 +63,42 @@ public class PathNode : MonoBehaviour {
     public Vector3 getRandomPoint(string seed, Vector3 playerPos) {
         System.Random rand = new System.Random(seed.GetHashCode());
 
+        //Get local position of raycast hit and node
         Vector3 f = transform.InverseTransformPoint(forward);
-        Vector3 p = transform.InverseTransformPoint(transform.position);
+        Vector3 p = transform.InverseTransformPoint(transform.position); //This is probably always 0,0,0. Whatever.
         Vector3 b = transform.InverseTransformPoint(back);
 
-        float howCloseToPrefered = rand.Next(0, 100);
         float z;
 
         //Try to cut the corner
-        if(howCloseToPrefered != -1f) {
-            if(Vector3.Distance(playerPos, forward) < Vector3.Distance(playerPos, back)) {
-                if(f.z > p.z) {
-                    z = randomCloseToPrefered(rand, p.z, f.z);
-                } else {
-                    z = randomCloseToPrefered(rand, f.z, p.z);
-                    z -= f.z;
-                }
+        if(Vector3.Distance(playerPos, forward) < Vector3.Distance(playerPos, back)) {
+            if(f.z > p.z) {
+                z = randomCloseToPrefered(rand, p.z, f.z);
             } else {
-                if(b.z > p.z) {
-                    z = randomCloseToPrefered(rand, p.z, b.z);
-                } else {
-                    z = randomCloseToPrefered(rand, b.z, p.z);
-                    z -= b.z;
-                }
+                z = randomCloseToPrefered(rand, f.z, p.z);
+                z -= f.z;
             }
         } else {
-            if(f.z > b.z) {
-                z = randomCloseToPrefered(rand, b.z, f.z);
+            if(b.z > p.z) {
+                z = randomCloseToPrefered(rand, p.z, b.z);
             } else {
-                z = randomCloseToPrefered(rand, f.z, b.z);
+                z = randomCloseToPrefered(rand, b.z, p.z);
+                z -= b.z;
             }
         }
-        
+        //We only need the z coord
         Vector3 result = new Vector3(0f, 0f, z);
-
         return transform.TransformPoint(result);
-
     }
 
     public float randomCloseToPrefered(System.Random rand, float min, float max) {
+        //Divide the node side in 5 equal parts
         float part = (max - min) / 5;
-        int terning = rand.Next(1, 6);
         float percent = rand.Next(0, 10000) / 100f;
         float newMax;
         float newMin;
 
+        //Prefer a point closer to the node center
         if(percent > 25f) {
             newMin = min;
             newMax = min + part;
@@ -124,17 +115,53 @@ public class PathNode : MonoBehaviour {
             newMin = min + (part * 4);
             newMax = min + (part * 5);
         }
-        
+
         return (rand.Next(Mathf.RoundToInt(newMin * 100f), Mathf.RoundToInt(newMax * 100f)) / 100f);
     }
 
-    public PathNode getNextNode(int seed) {
-        return getNextNode(seed.ToString());
+    public Vector3 getLocalPosition(Transform parent) {
+        return parent.InverseTransformPoint(transform.position);
     }
 
-    public PathNode getNextNode(string seed) {
+    public PathNode getNextNode(int seed, Transform parent = null) {
+        return getNextNode(seed.ToString(), parent);
+    }
+
+    public PathNode getNextNode(string seed, Transform parent = null) {
         System.Random rand = new System.Random(seed.GetHashCode());
 
-        return nextNode[rand.Next(0, nextNode.Count)];
+        //If the node has 2 or more nodes, pick one
+        if(nextNode.Count >= 2) {
+            float percentage = rand.Next(0, 10000) / 100f;
+
+            //25% of the time it just randomly picks any of the nodes
+            if(percentage <= 25f)
+                return nextNode[rand.Next(0, nextNode.Count)];
+            
+            //Calculate distance to the next node from the current node center
+            Vector3 testPos = this.transform.position;
+
+            //if a parent is provided, we want a 25% chance of using what would probably be the EnemyAI's position instead of the node center
+            if(percentage < 50f && parent != null)
+                testPos = parent.position;
+            
+            //Find the closest node to whatever we decided above
+            float closestDist = float.MaxValue;
+            int index = 0;
+            for(int i = 0; i < nextNode.Count; i++) { 
+                float currDist = Vector3.Distance(testPos, nextNode[i].transform.position);
+                //Distance was shorter than whatever we've tested before, use this one instead
+                if(currDist < closestDist) {
+                    closestDist = currDist;
+                    index = i;
+                }
+            }
+
+            //Picked the perfect node for us
+            return nextNode[index];
+        }
+
+        //Had only one node anyway
+        return nextNode[0];
     }
 }
