@@ -34,17 +34,30 @@ public class PlayerController : MonoBehaviour
 	public float boostConsumption;
 	public float maxBoostFuel;
 
+	//Animation
+	public Animator playerAnim;
+
 	void Start ()
 	{
+		//playerAnim = GetComponentInChildren<Animator> ();
 		playerRigid = GetComponent<Rigidbody> ();
 		maxSpeed = normalMaxSpeed;
+
 		//boostFuel = maxBoostFuel;
+	}
+
+	void Update ()
+	{
+		
 	}
 
 	void FixedUpdate ()
 	{
+		
 		if (Input.GetAxis ("Vertical") == 1 && Input.GetAxis ("Break") != 1)
 		{
+			
+
 			if (speed < maxSpeed)
 				speed += aceleration;
 			
@@ -55,6 +68,7 @@ public class PlayerController : MonoBehaviour
 		//break decreases the player's speed over time 
 		else if (Input.GetAxis ("Break") > 0)
 		{
+			playerAnim.SetFloat ("TiltY", (Input.GetAxis ("Vertical") * -1));
 			speed -= brakeAceleration;
 			if (speed <= 0)
 			{
