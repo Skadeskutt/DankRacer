@@ -10,6 +10,7 @@ public class PathNodeEditor : Editor {
         DrawDefaultInspector();
         PathNode pn = (PathNode) target;
 
+        //Add a new node and automatically connect it to the selected node
         if(GUILayout.Button("Create next node")) {
             if(pn.nextNode.Count == 0 || pn.nextNode[0] == null) {
                 GameObject newNode = (GameObject) PrefabUtility.InstantiatePrefab((GameObject) Resources.Load("Prefabs/Path/PathNode"));
@@ -26,6 +27,7 @@ public class PathNodeEditor : Editor {
             }
         }
 
+        //Add another path on the selected node
         if(GUILayout.Button("Add new path")) {
             Color c = pn.getRandomColor();
             GameObject newNode = (GameObject) PrefabUtility.InstantiatePrefab((GameObject) Resources.Load("Prefabs/Path/PathNode"));
